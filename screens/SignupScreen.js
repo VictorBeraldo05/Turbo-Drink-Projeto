@@ -17,85 +17,80 @@ export default function SignupScreen({ onBack }) {
   
     async function handleSignup() {
         console.log("Botão clicado — testando conexão com Supabase...");
-        try {
-          // 1️⃣ Validação dos campos
-          if (!nome || !email || !cpf || !telefone || !senha) {
-            setAlertMessage("Por favor, preencha todos os campos para criar sua conta.");
-            setAlertVisible(true);
-            return;
-          }
       
-          if (senha.length < 8) {
-            setAlertMessage("A senha deve ter no mínimo 8 caracteres");
-            setAlertVisible(true);
-            return;
-          }
-      
-          // 2️⃣ Verificar se o CPF já existe
-          const { data: existingCPF, error: cpfError } = await supabase
-            .from('usuarios')
-            .select('*')
-            .eq('cpf', cpf.trim())
-            .maybeSingle(); // ✅ retorna null se não existir
-      
-          if (cpfError) throw cpfError;
-      
-          if (existingCPF) {
-            setAlertMessage("Este CPF já está cadastrado!");
-            setAlertVisible(true);
-            return;
-          }
-      
-          // 3️⃣ Verificar se o telefone já existe
-          const { data: existingPhone, error: phoneError } = await supabase
-            .from('usuarios')
-            .select('*')
-            .eq('telefone', telefone.trim())
-            .maybeSingle(); // ✅ retorna null se não existir
-      
-          if (phoneError) throw phoneError;
-      
-          if (existingPhone) {
-            setAlertMessage("Este telefone já está cadastrado!");
-            setAlertVisible(true);
-            return;
-          }
-      
-          // 4️⃣ Criar usuário no Auth
-          const { data, error } = await supabase.auth.signUp({
-            email,
-            password: senha,
-          });
-      
-          if (error) {
-            setAlertMessage(
-              error.message.includes('User already registered')
-                ? "Este e-mail já está cadastrado. Tente fazer login."
-                : "Erro ao criar conta. Tente novamente mais tarde."
-            );
-            setAlertVisible(true);
-            return;
-          }
-      
-          const user = data.user;
-      
-          // 5️⃣ Inserir usuário na tabela "usuarios"
-          const { error: insertError } = await supabase.from('usuarios').insert([
-            { id: user.id, nome, cpf, telefone }
-          ]);
-      
-          if (insertError) throw insertError;
-      
-          setAlertMessage("Conta criada com sucesso! Faça login para continuar.");
+        // 1️⃣ Validação dos campos
+        if (!nome || !email || !cpf || !telefone || !senha) {
+          setAlertMessage("Por favor, preencha todos os campos para criar sua conta.");
           setAlertVisible(true);
-          setTimeout(() => onBack(), 1500);
-      
-        } catch (err) {
-          console.error("Erro inesperado no handleSignup:", err);
-          setAlertMessage("Ocorreu um erro. Tente novamente mais tarde.");
-          setAlertVisible(true);
+          return;
         }
+      
+        if (senha.length < 8) {
+          setAlertMessage("A senha deve ter no mínimo 8 caracteres");
+          setAlertVisible(true);
+          return;
+        }
+      
+        const { data: existing, error: checkError } = await supabase
+        .from('usuarios')
+        .select('id')
+        .eq('cpf', cpf)
+        .maybeSingle(); // 👈 não quebra se não encontrar
+    
+        if (existing) {
+            setAlertMessage("CPF já cadastrado. Verifique seus dados.");
+            setAlertVisible(true);
+            return;
+        }
+
+        const { data: existingt, error: checkErrort } = await supabase
+        .from('usuarios')
+        .select('id')
+        .eq('telefone', telefone)
+        .maybeSingle(); // 👈 não quebra se não encontrar
+    
+        if (existingt) {
+            setAlertMessage("Telefone já cadastrado. Verifique seus dados.");
+            setAlertVisible(true);
+            return;
+        }
+      
+        // 4️⃣ Criar usuário no Auth
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password: senha,
+        });
+      
+        if (error) {
+          setAlertMessage(
+            error.message.includes("User already registered")
+              ? "Este e-mail já está cadastrado. Tente fazer login."
+              : "Erro ao criar conta. Tente novamente mais tarde."
+          );
+          setAlertVisible(true);
+          return;
+        }
+      
+        const user = data.user;
+      
+        // 5️⃣ Inserir usuário na tabela "usuarios"
+        const { error: insertError } = await supabase.from("usuarios").insert([
+          { id: user.id, nome, cpf, telefone },
+        ]);
+      
+        if (insertError) {
+          console.error("Erro ao salvar usuário na tabela:", insertError);
+          setAlertMessage("Erro ao salvar usuário. Tente novamente.");
+          setAlertVisible(true);
+          return;
+        }
+      
+        // ✅ Sucesso
+        setAlertMessage("Conta criada com sucesso! Faça login para continuar.");
+        setAlertVisible(true);
+        setTimeout(() => onBack(), 1500);
       }
+      
   
     return (
       <View style={{ flex:1, backgroundColor: COLORS.bg, padding: 20, justifyContent: 'center' }}>

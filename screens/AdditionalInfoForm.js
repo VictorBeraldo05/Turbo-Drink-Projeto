@@ -21,10 +21,22 @@ export default function AdditionalInfoForm({ user, onComplete }) {
       .from('usuarios')
       .select('id')
       .eq('cpf', cpf)
-      .single();
+      .maybeSingle(); // 👈 não quebra se não encontrar
   
       if (existing) {
         setAlertMessage("CPF já cadastrado. Verifique seus dados.");
+        setAlertVisible(true);
+        return;
+      }
+
+      const { data: existingt, error: checkErrort } = await supabase
+      .from('usuarios')
+      .select('id')
+      .eq('telefone', telefone)
+      .maybeSingle(); // 👈 não quebra se não encontrar
+  
+      if (existingt) {
+        setAlertMessage("Telefone já cadastrado. Verifique seus dados.");
         setAlertVisible(true);
         return;
       }
