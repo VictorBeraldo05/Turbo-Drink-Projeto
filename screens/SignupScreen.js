@@ -31,28 +31,44 @@ export default function SignupScreen({ onBack }) {
           return;
         }
       
-        const { data: existing, error: checkError } = await supabase
+        // Verifica CPF
+        const { data: cpfData, error: cpfError } = await supabase
         .from('usuarios')
         .select('id')
         .eq('cpf', cpf)
-        .maybeSingle(); // 👈 não quebra se não encontrar
-    
-        if (existing) {
-            setAlertMessage("CPF já cadastrado. Verifique seus dados.");
-            setAlertVisible(true);
-            return;
+        .limit(1); // garante que só retorna 1
+
+        if (cpfError) {
+        console.error(cpfError);
+        setAlertMessage("Erro ao verificar CPF. Tente novamente.");
+        setAlertVisible(true);
+        return;
         }
 
-        const { data: existingt, error: checkErrort } = await supabase
+        if (cpfData && cpfData.length > 0) {
+        setAlertMessage("CPF já cadastrado. Verifique seus dados.");
+        setAlertVisible(true);
+        return;
+        }
+
+        // Verifica telefone
+        const { data: telData, error: telError } = await supabase
         .from('usuarios')
         .select('id')
         .eq('telefone', telefone)
-        .maybeSingle(); // 👈 não quebra se não encontrar
-    
-        if (existingt) {
-            setAlertMessage("Telefone já cadastrado. Verifique seus dados.");
-            setAlertVisible(true);
-            return;
+        .limit(1);
+
+        if (telError) {
+        console.error(telError);
+        setAlertMessage("Erro ao verificar telefone. Tente novamente.");
+        setAlertVisible(true);
+        return;
+        }
+
+        if (telData && telData.length > 0) {
+        setAlertMessage("Telefone já cadastrado. Verifique seus dados.");
+        setAlertVisible(true);
+        return;
         }
       
         // 4️⃣ Criar usuário no Auth
@@ -60,6 +76,9 @@ export default function SignupScreen({ onBack }) {
           email,
           password: senha,
         });
+
+        // Atualizar user_metadata
+        await supabase.auth.updateUser({ data: { full_name: nome } });
       
         if (error) {
           setAlertMessage(
@@ -115,8 +134,8 @@ export default function SignupScreen({ onBack }) {
           </Text>
         ) : null}
   
-        <Pressable onPress={() => console.log("Botão clicado!")}>
-        <Text>Cadastrar</Text>
+        <Pressable onPress={handleSignup} style={styles.primaryBtn}>
+        <Text style={styles.primaryTxt}>Cadastrar</Text>
         </Pressable>
   
         <Pressable onPress={onBack} style={{ marginTop: 15 }}>

@@ -70,6 +70,13 @@ export const styles = StyleSheet.create({
       borderColor: COLORS.line,
       marginTop: 15, marginBottom: 15,
     },
+
+    label: {
+      color: COLORS.text,   // branco
+      fontWeight: '700',
+      fontSize: 14,
+      marginBottom: 6,
+    },
   
     inputSenha: {
       backgroundColor: '#0b0b0d',
