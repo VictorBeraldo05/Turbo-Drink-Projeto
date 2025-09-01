@@ -178,6 +178,7 @@ export const styles = StyleSheet.create({
       flexDirection: 'row',
       alignItems: 'center',
       gap: 10,
+      marginBottom: 12,
     },
     qtyRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     qtyBtn: {
@@ -294,4 +295,85 @@ export const styles = StyleSheet.create({
   
     secondaryTxt: { color: COLORS.text, fontWeight: '800' },
     divider: { height: 1, backgroundColor: COLORS.line, marginVertical: 8 },
-  });
+
+    // --- ADICIONAIS PARA O CARRINHO ---
+    itemImage: {
+      width: 55,
+      height: 55,
+      borderRadius: 10,
+      marginRight: 10,
+      backgroundColor: '#000',
+    },
+    itemInfo: {
+      flex: 1,
+    },
+    itemTitle: {
+      color: COLORS.text,
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    itemSubtitle: {
+      color: COLORS.muted,
+      fontSize: 12,
+      marginTop: 2,
+    },
+    quantityContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "#2a2a2a",
+      borderRadius: 10,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+    },
+    quantityButton: {
+      color: COLORS.brand,
+      fontSize: 20,
+      paddingHorizontal: 6,
+    },
+    quantityText: {
+      color: COLORS.text,
+      fontSize: 16,
+      marginHorizontal: 6,
+    },
+    summary: {
+      padding: 16,
+      borderTopWidth: 1,
+      borderColor: COLORS.line,
+    },
+    totalLabel: {
+      color: COLORS.text,
+      fontSize: 16,
+      fontWeight: "700",
+    },
+    totalValue: {
+      color: COLORS.brand,
+      fontSize: 16,
+      fontWeight: "700",
+    },
+    deliveryInfo: {
+      paddingHorizontal: 16,
+      paddingBottom: 12,
+    },
+    deliveryText: {
+      color: COLORS.text,
+      fontSize: 14,
+      fontWeight: "600",
+    },
+    deliverySub: {
+      color: COLORS.muted,
+      fontSize: 12,
+    },
+    checkoutButton: {
+      backgroundColor: COLORS.brand,
+      paddingVertical: 16,
+      borderRadius: 30,
+      alignItems: "center",
+      marginHorizontal: 16,
+      marginTop: 10,
+    },
+    checkoutText: {
+      color: "#fff",
+      fontSize: 16,
+      fontWeight: "700",
+    },
+});
