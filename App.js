@@ -11,6 +11,7 @@ import OrdersScreen from "./screens/OrdersScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 import TrackScreen from "./screens/TrackScreen";
 import { SCREENS } from "./utils/constants";
+import EditProfileScreen from "./screens/EditProfileScreen";
 import { Alert } from "react-native";
 
 import Header from "./components/Header";
@@ -168,7 +169,22 @@ export default function App() {
           )}
 
           {screen === SCREENS.PROFILE && (
-            <ProfileScreen user={user} address={address} setAddress={setAddress} payment={payment} setPayment={setPayment} />
+            <ProfileScreen 
+              user={user} 
+              onLogout={async () => {
+                await supabase.auth.signOut();
+                setUser(null);
+                setScreen(SCREENS.LOGIN);
+              }}
+              onEditProfile={() => setScreen(SCREENS.EDIT_PROFILE)} 
+            />
+          )}
+
+          {screen === SCREENS.EDIT_PROFILE && (
+            <EditProfileScreen 
+              user={user} 
+              onBack={() => setScreen(SCREENS.PROFILE)} // volta para o perfil
+            />
           )}
 
           {screen === SCREENS.TRACK && activeOrder && (

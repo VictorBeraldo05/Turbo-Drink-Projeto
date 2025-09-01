@@ -6,4 +6,5 @@ export const SCREENS = {
   PROFILE: 'PROFILE',
   TRACK: 'TRACK',
   SIGNUP: 'SIGNUP',
+  EDIT_PROFILE: 'edit_profile',
 };

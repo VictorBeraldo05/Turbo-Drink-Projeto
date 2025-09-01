@@ -1,90 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, Text, TextInput, View, Pressable, Alert } from 'react-native';
+import { ScrollView, Text, View, Pressable, Modal, TextInput, Image, Alert } from 'react-native';
 import { COLORS } from '../utils/colors';
 import { styles } from '../utils/styles';
 import { supabase } from '../supabase';
+import { FontAwesome5, MaterialIcons, Entypo } from '@expo/vector-icons';
 
-export default function ProfileScreen({ user, onLogout }) {
+export default function ProfileScreen({ user, onLogout, onEditProfile }) {
   const [nome, setNome] = useState(user?.user_metadata?.full_name || '');
-  const [email, setEmail] = useState(
-    typeof user?.email === 'string' ? user.email : user?.email?.address || ''
-  );
+  const [email, setEmail] = useState(user?.email || '');
   const [telefone, setTelefone] = useState('');
   const [cpf, setCpf] = useState('');
   const [address, setAddress] = useState('');
+
+  const [modalVisible, setModalVisible] = useState(null); // 'nome', 'telefone', 'cpf', 'endereco', 'senha'
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
 
-  // Buscar dados da tabela 'usuarios' pelo user.id
   useEffect(() => {
     async function fetchUserData() {
-      console.log('🔍 Iniciando busca de dados do usuário...');
-      console.log('User ID:', user?.id);
-
-      if (!user?.id) {
-        console.log('⚠️ User ID não definido. Abortando fetch.');
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('usuarios')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-
-        if (error) {
-          console.log('❌ Erro ao buscar dados do usuário:', error.message);
-          if (error.code === 'PGRST116') {
-            // Registro não encontrado, criar um vazio
-            console.log('🆕 Registro não encontrado. Criando novo registro...');
-            const { error: insertError } = await supabase.from('usuarios').insert([{ id: user.id }]);
-            if (insertError) {
-              console.log('❌ Erro ao criar registro vazio:', insertError.message);
-            } else {
-              console.log('✅ Registro vazio criado com sucesso.');
-            }
-          }
-          return;
-        }
-
-        if (data) {
-          console.log('✅ Dados recebidos do banco:', data);
-          setTelefone(data.telefone || '');
-          setCpf(data.cpf || '');
-          setAddress(data.endereco || '');
-        } else {
-          console.log('⚠️ Nenhum dado encontrado para este usuário.');
-        }
-      } catch (err) {
-        console.error('💥 Erro inesperado ao buscar dados do usuário:', err);
+      if (!user?.id) return;
+      const { data } = await supabase.from('usuarios').select('*').eq('id', user.id).single();
+      if (data) {
+        setTelefone(data.telefone || '');
+        setCpf(data.cpf || '');
+        setAddress(data.endereco || '');
       }
     }
-
     fetchUserData();
   }, [user]);
 
-  async function atualizarDados() {
-    console.log('💾 Atualizando dados...');
-    console.log({ nome, telefone, cpf, endereco: address });
-
+  async function atualizarCampo(campo, valor) {
     try {
-      // Atualiza nome no Auth
-      const { error: authError } = await supabase.auth.updateUser({ data: { full_name: nome } });
-      if (authError) throw authError;
-
-      // Atualiza tabela usuarios pelo user.id
-      const { error: dbError } = await supabase
-        .from('usuarios')
-        .upsert({ id: user.id, nome, telefone, cpf, endereco: address }, { onConflict: 'id' });
-
-      if (dbError) throw dbError;
-
-      console.log('✅ Dados atualizados com sucesso no banco e Auth.');
-      Alert.alert('Sucesso', 'Dados atualizados com sucesso!');
+      if (campo === 'nome') await supabase.auth.updateUser({ data: { full_name: valor } });
+      await supabase.from('usuarios').upsert({ id: user.id, [campo]: valor }, { onConflict: 'id' });
+      Alert.alert('Sucesso', 'Atualizado com sucesso!');
+      setModalVisible(null);
     } catch (err) {
-      console.error('❌ Erro ao atualizar dados:', err);
-      Alert.alert('Erro', 'Não foi possível atualizar seus dados.');
+      Alert.alert('Erro', 'Não foi possível atualizar');
     }
   }
 
@@ -97,67 +49,57 @@ export default function ProfileScreen({ user, onLogout }) {
       Alert.alert('Erro', 'As senhas não coincidem.');
       return;
     }
-
     const { error } = await supabase.auth.updateUser({ password: novaSenha });
-    if (error) {
-      Alert.alert('Erro', error.message);
-    } else {
-      Alert.alert('Sucesso', 'Senha alterada com sucesso!');
+    if (error) Alert.alert('Erro', error.message);
+    else {
+      Alert.alert('Sucesso', 'Senha alterada!');
       setNovaSenha('');
       setConfirmarSenha('');
+      setModalVisible(null);
     }
   }
 
+  const opcoes = [
+    { label: 'Métodos de pagamento', icon: <FontAwesome5 name="credit-card" size={20} color={COLORS.text} />, action: () => Alert.alert('Métodos de pagamento') },
+    { label: 'Histórico de pedidos', icon: <MaterialIcons name="history" size={20} color={COLORS.text} />, action: () => Alert.alert('Histórico de pedidos') },
+    { label: 'Configurações', icon: <Entypo name="cog" size={20} color={COLORS.text} />, action: () => Alert.alert('Configurações') },
+    { label: 'Ajuda & Suporte', icon: <Entypo name="help" size={20} color={COLORS.text} />, action: () => Alert.alert('Ajuda & Suporte') },
+    { label: 'Termos & Privacidade', icon: <MaterialIcons name="privacy-tip" size={20} color={COLORS.text} />, action: () => Alert.alert('Termos & Privacidade') },
+    { label: 'Sair da conta', icon: <Entypo name="log-out" size={20} color="red" />, action: onLogout },
+  ];
+
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: COLORS.bg }} contentContainerStyle={{ paddingBottom: 100 }}>
-      <Text style={styles.sectionTitle}>Meu Perfil</Text>
+    <ScrollView style={{ flex: 1, backgroundColor: COLORS.bg }} contentContainerStyle={{ padding: 20 }}>
+      
+      {/* Card do usuário */}
+      <Pressable
+        style={[styles.formCard, { flexDirection: 'row', alignItems: 'center', padding: 20, marginBottom: 20 }]}
+        onPress={onEditProfile} // chama a função de navegação
+      >
+        <Image
+          source={{ uri: user?.user_metadata?.avatar_url || 'https://i.pravatar.cc/100' }}
+          style={{ width: 70, height: 70, borderRadius: 35, marginRight: 15 }}
+        />
+        <View>
+          <Text style={{ fontSize: 20, fontWeight: 'bold', color: COLORS.text }}>Meu Perfil</Text>
+          <Text style={{ color: COLORS.muted }}>Acesse suas informações do perfil</Text>
+        </View>
+      </Pressable>
 
-      <View style={styles.formCard}>
-        <Text style={styles.label}>Nome</Text>
-        <TextInput value={nome} onChangeText={setNome} style={styles.input} />
-
-        <Text style={styles.label}>E-mail</Text>
-        <TextInput value={email} editable={false} style={[styles.input, { opacity: 0.9 }]} />
-
-        <Text style={styles.label}>Telefone</Text>
-        <TextInput value={telefone} onChangeText={setTelefone} style={styles.input} keyboardType="phone-pad" />
-
-        <Text style={styles.label}>CPF</Text>
-        <TextInput value={cpf} onChangeText={setCpf} style={styles.input} />
-
-        <Text style={styles.label}>Endereço padrão</Text>
-        <TextInput value={address} onChangeText={setAddress} style={styles.input} />
-
-        <Pressable onPress={atualizarDados} style={styles.primaryBtn}>
-          <Text style={styles.primaryTxt}>Salvar alterações</Text>
+      {/* Lista de opções */}
+      {opcoes.map((opt, idx) => (
+        <Pressable
+          key={idx}
+          onPress={opt.action}
+          style={[styles.formCard, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 15, paddingHorizontal: 20, marginBottom: 10 }]}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            {opt.icon}
+            <Text style={{ fontSize: 16, color: COLORS.text, marginLeft: 15 }}>{opt.label}</Text>
+          </View>
+          <Entypo name="chevron-right" size={20} color={COLORS.muted} />
         </Pressable>
-      </View>
-
-      <Text style={styles.sectionTitle}>Segurança</Text>
-      <View style={styles.formCard}>
-        <Text style={styles.label}>Nova senha</Text>
-        <TextInput value={novaSenha} onChangeText={setNovaSenha} style={styles.input} secureTextEntry />
-
-        <Text style={styles.label}>Confirmar nova senha</Text>
-        <TextInput value={confirmarSenha} onChangeText={setConfirmarSenha} style={styles.input} secureTextEntry />
-
-        <Pressable onPress={trocarSenha} style={styles.primaryBtn}>
-          <Text style={styles.primaryTxt}>Alterar senha</Text>
-        </Pressable>
-      </View>
-
-      <Text style={styles.sectionTitle}>Configurações</Text>
-      <View style={styles.formCard}>
-        <Pressable style={styles.secondaryBtn}>
-          <Text style={styles.secondaryTxt}>Notificações</Text>
-        </Pressable>
-        <Pressable style={styles.secondaryBtn}>
-          <Text style={styles.secondaryTxt}>Tema escuro</Text>
-        </Pressable>
-        <Pressable style={styles.secondaryBtn} onPress={onLogout}>
-          <Text style={[styles.secondaryTxt, { color: 'red' }]}>Sair da conta</Text>
-        </Pressable>
-      </View>
+      ))}
     </ScrollView>
   );
 }
